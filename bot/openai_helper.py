@@ -28,6 +28,7 @@ GPT_4_MODELS = ("gpt-4", "gpt-4-0314", "gpt-4-0613")
 GPT_4_32K_MODELS = ("gpt-4-32k", "gpt-4-32k-0314", "gpt-4-32k-0613")
 GPT_4_VISION_MODELS = ("gpt-4-vision-preview",)
 GPT_4_128K_MODELS = ("gpt-4-1106-preview","gpt-4-0125-preview","gpt-4-turbo-preview")
+META_MODELS = ("llama3")
 GPT_ALL_MODELS = GPT_3_MODELS + GPT_3_16K_MODELS + GPT_4_MODELS + GPT_4_32K_MODELS + GPT_4_VISION_MODELS + GPT_4_128K_MODELS
 
 
@@ -52,6 +53,9 @@ def default_max_tokens(model: str) -> int:
         return 4096
     elif model in GPT_4_128K_MODELS:
         return 4096
+    elif model in META_MODELS:    
+        if model == "llama3":
+            return 8192
 
 
 def are_functions_available(model: str) -> bool:
@@ -67,7 +71,7 @@ def are_functions_available(model: str) -> bool:
     # Models gpt-3.5-turbo-0613 and  gpt-3.5-turbo-16k-0613 will be deprecated on June 13, 2024
     if model in ("gpt-3.5-turbo-0613", "gpt-3.5-turbo-16k-0613"):
         return datetime.date.today() < datetime.date(2024, 6, 13)
-    if model == 'gpt-4-vision-preview':
+    if model in ("gpt-4-vision-preview", "llama3"):
         return False
     return True
 
@@ -622,6 +626,8 @@ class OpenAIHelper:
 
     def __max_model_tokens(self):
         base = 4096
+        if self.config['model'] in META_MODELS:
+            return base
         if self.config['model'] in GPT_3_MODELS:
             return base
         if self.config['model'] in GPT_3_16K_MODELS:
@@ -655,6 +661,9 @@ class OpenAIHelper:
             tokens_per_message = 4  # every message follows <|start|>{role/name}\n{content}<|end|>\n
             tokens_per_name = -1  # if there's a name, the role is omitted
         elif model in GPT_4_MODELS + GPT_4_32K_MODELS + GPT_4_VISION_MODELS + GPT_4_128K_MODELS:
+            tokens_per_message = 3
+            tokens_per_name = 1
+        elif model in META_MODELS:
             tokens_per_message = 3
             tokens_per_name = 1
         else:
